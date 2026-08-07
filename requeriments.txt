@@ -1,0 +1,7 @@
+streamlit
+streamlit-folium
+folium
+supabase
+google-genai
+pydantic
+python-dotenv
