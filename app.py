@@ -4,6 +4,7 @@ import os
 import folium
 from streamlit_folium import st_folium
 from generate_itinerary import generar_plan, supabase
+from exporter import generar_pdf, generar_txt
 
 st.set_page_config(
     page_title="CDMX Travel Planner",
@@ -88,6 +89,48 @@ if os.path.exists(archivo_itinerario):
                             ).add_to(m)
                             
                     st_folium(m, width=450, height=350, key=f"mapa_dia_{dia['dia_numero']}")
+
+        # --- SECCIÓN DE EXPORTACIÓN Y DESCARGAS ---
+        st.divider()
+        st.markdown("### 📥 Descargar tu Itinerario")
+        
+        # Estructurar los datos para el exportador
+        datos_exportar = {
+            "dias": [
+                {
+                    "dia": d["dia_numero"],
+                    "actividades": [
+                        {
+                            "hora": act["hora_sugerida"],
+                            "lugar": act["lugar_nombre"],
+                            "descripcion": act["razon_recomendacion"]
+                        } for act in d["actividades"]
+                    ]
+                } for d in plan.get("itinerario_diario", [])
+            ]
+        }
+
+        col_pdf, col_txt = st.columns(2)
+
+        with col_pdf:
+            pdf_bytes = generar_pdf(datos_exportar)
+            st.download_button(
+                label="📄 Descargar como PDF",
+                data=pdf_bytes,
+                file_name="itinerario_cdmx.pdf",
+                mime="application/pdf",
+                use_container_width=True
+            )
+
+        with col_txt:
+            txt_bytes = generar_txt(datos_exportar)
+            st.download_button(
+                label="📝 Descargar como Texto (.txt)",
+                data=txt_bytes,
+                file_name="itinerario_cdmx.txt",
+                mime="text/plain",
+                use_container_width=True
+            )
 
     except Exception as e:
         st.error(f"Error al cargar el itinerario visual: {e}")
