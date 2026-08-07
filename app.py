@@ -6,12 +6,12 @@ from streamlit_folium import st_folium
 from generate_itinerary import generar_plan, supabase
 
 st.set_page_config(
-    page_title="CDMX AI Travel Planner",
+    page_title="CDMX Travel Planner",
     page_icon="🗺️",
     layout="wide"
 )
 
-st.title("🗺️ CDMX Travel Assistant (IA)")
+st.title("🗺️ CDMX Travel Assistant-¿Qué onda cachorra? presenta a tu amiga de los lunares, helloow")
 st.subheader("Tu itinerario inteligente y personalizado por la Ciudad de México")
 
 # 1. Barra lateral
