@@ -12,7 +12,7 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("🗺️ CDMX Travel Assistant-Hola chamaca chiqueada, me dejarías contar tus lunares por el resto de mi vida?")
+st.title("🗺️ CDMX Travel Assistant")
 st.subheader("Tu itinerario inteligente y personalizado por la Ciudad de México")
 
 # 1. Barra lateral
