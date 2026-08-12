@@ -33,3 +33,20 @@
    ```bash
    git clone [https://github.com/TU_USUARIO/cdmx-travel-planner.git](https://github.com/TU_USUARIO/cdmx-travel-planner.git)
    cd cdmx-travel-planner
+
+Instalar dependencias:
+
+pip install -r requirements.txt
+
+Configurar variables de entorno (.env):
+Crea un archivo .env en la raíz con tus llaves:
+SUPABASE_URL="tu_supabase_url"
+SUPABASE_KEY="tu_supabase_key"
+GEMINI_API_KEY="tu_gemini_api_key"
+
+Ejecutar la aplicación:
+streamlit run app.py
+
+🌐 Demo en Vivo
+Puedes probar la aplicación desplegada en producción a través del siguiente enlace:
+👉 Probá la App en Streamlit Cloud: https://cdmxtravelapp.streamlit.app/
