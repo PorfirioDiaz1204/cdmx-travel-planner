@@ -1,5 +1,6 @@
 import os
 import json
+import datetime
 from dotenv import load_dotenv
 from supabase import create_client, Client
 from google import genai
@@ -30,6 +31,8 @@ class Actividad(BaseModel):
 
 class DiaItinerario(BaseModel):
     dia_numero: int
+    fecha: str = Field(description="Formato YYYY-MM-DD")
+    dia_semana: str = Field(description="Ejemplo: 'Lunes', 'Martes', etc.")
     titulo_dia: str = Field(description="Ejemplo: 'Día 1: Arte y Cultura en el Centro Histórico'")
     zona_principal: str = Field(description="Zona concentrada del día para minimizar traslados")
     actividades: List[Actividad]
@@ -41,8 +44,17 @@ class PlanDeViaje(BaseModel):
     itinerario_diario: List[DiaItinerario]
 
 # 3. Función Principal del Generador
-def generar_plan(dias: int, perfil_grupo: str, estilo_viaje: str):
-    print(f"🔍 Consultando base de datos en Supabase para un viaje de {dias} días...")
+def generar_plan(
+    fecha_inicio: datetime.date,
+    fecha_fin: datetime.date,
+    perfil_grupo: str,
+    estilo_viaje: str,
+    hora_inicio: str,
+    hora_fin: str,
+    bloqueos_horario: str = ""
+):
+    num_dias = (fecha_fin - fecha_inicio).days + 1
+    print(f"🔍 Consultando base de datos en Supabase para un viaje del {fecha_inicio} al {fecha_fin} ({num_dias} días)...")
     
     # Obtener lugares desde Supabase
     response = supabase.table("lugares_cdmx").select("*").execute()
@@ -52,19 +64,25 @@ def generar_plan(dias: int, perfil_grupo: str, estilo_viaje: str):
         print("❌ No se encontraron lugares en la base de datos.")
         return
 
-    # Prompt dinámico enriquecido con los datos reales
     prompt = f"""
     Eres un experto guía de viajes en la Ciudad de México.
-    Organiza un plan de viaje completo de {dias} días para un grupo de tipo: '{perfil_grupo}' con un estilo: '{estilo_viaje}'.
+    Organiza un plan de viaje completo del {fecha_inicio.strftime('%Y-%m-%d')} al {fecha_fin.strftime('%Y-%m-%d')} ({num_dias} días).
+    Perfil del grupo: '{perfil_grupo}'
+    Estilo de viaje: '{estilo_viaje}'
 
-    A continuación tienes la lista oficial de lugares disponibles con sus coordenadas y zonas:
+    RESTRICCIONES DE TIEMPO DEL USUARIO:
+    - Rango operativo diario: De {hora_inicio} a {hora_fin}.
+    - Compromisos o momentos ocupados marcados por el usuario: {bloqueos_horario if bloqueos_horario else 'Ninguno'}.
+
+    Lista de lugares disponibles en la base de datos:
     {json.dumps(lugares_disponibles, ensure_ascii=False)}
 
     REGLAS ESTRICTAS DE PLANIFICACIÓN:
     1. Utiliza ÚNICAMENTE los lugares proporcionados en la lista anterior.
-    2. Agrupa las actividades de un mismo día en la MISMA ZONA o zonas contiguas (ej. Roma y Condesa juntas, Coyoacán solo) para no hacer perder tiempo al usuario en tráfico.
-    3. Asegura un ritmo lógico: cafetería/desayuno por la mañana, museo/actividad cultural al mediodía, parque/paseo por la tarde.
-    4. Cada día debe tener entre 3 y 4 actividades organizadas cronológicamente.
+    2. REGLA DEL DÍA DE LA SEMANA Y HORARIOS: Evalúa qué día de la semana cae cada fecha. Si una fecha es LUNES, NO programes museos públicos (casi todos cierran). Utiliza parques, mercados, barrios históricos o restaurantes.
+    3. Respeta los momentos ocupados indicados por el usuario dejando esa franja libre.
+    4. Agrupa las actividades de un mismo día en la MISMA ZONA o zonas contiguas para evitar tráfico.
+    5. Cada día debe tener entre 3 y 4 actividades organizadas cronológicamente respetando la ventana de {hora_inicio} a {hora_fin}.
     """
 
     config = types.GenerateContentConfig(
@@ -77,14 +95,13 @@ def generar_plan(dias: int, perfil_grupo: str, estilo_viaje: str):
     
     try:
         res = ai_client.models.generate_content(
-            model="gemini-flash-lite-latest",
+            model="gemini-2.5-flash",
             contents=prompt,
             config=config,
         )
         
         plan_json = json.loads(res.text)
         
-        # Guardar itinerario en un archivo local para revisión
         archivo_salida = "itinerario_generado.json"
         with open(archivo_salida, "w", encoding="utf-8") as f:
             json.dump(plan_json, f, ensure_ascii=False, indent=4)
@@ -93,8 +110,3 @@ def generar_plan(dias: int, perfil_grupo: str, estilo_viaje: str):
         
     except Exception as e:
         print(f"❌ Error al generar el itinerario: {e}")
-
-# 4. Prueba del script con un caso real
-if __name__ == "__main__":
-    # Simulación de petición de usuario: Viaje de 3 días en familia
-    generar_plan(dias=3, perfil_grupo="Familia con niños", estilo_viaje="Cultural y caminatas al aire libre")
