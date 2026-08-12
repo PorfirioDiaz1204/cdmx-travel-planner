@@ -1,6 +1,7 @@
 import streamlit as st
 import json
 import os
+import datetime
 import folium
 from streamlit_folium import st_folium
 from generate_itinerary import generar_plan, supabase
@@ -19,7 +20,13 @@ st.subheader("Tu itinerario inteligente y personalizado por la Ciudad de México
 with st.sidebar:
     st.header("⚙️ Configura tu Viaje")
     
-    dias = st.slider("¿Cuántos días estarás en CDMX?", min_value=1, max_value=5, value=3)
+    hoy = datetime.date.today()
+    fechas = st.date_input(
+        "¿Cuáles son las fechas de tu viaje?",
+        value=(hoy, hoy + datetime.timedelta(days=2)),
+        min_value=hoy,
+        format="DD/MM/YYYY"
+    )
     
     perfil = st.selectbox(
         "¿Con quién viajas?",
@@ -31,17 +38,44 @@ with st.sidebar:
         ["Café de especialidad", "Museos y Arte", "Hiking y Naturaleza", "Gastronomía Tradicional", "Lujo y Gourmet"],
         default=["Café de especialidad", "Museos y Arte", "Hiking y Naturaleza"]
     )
+
+    st.markdown("---")
+    st.subheader("⏰ Control de Horarios")
+
+    col_h1, col_h2 = st.columns(2)
+    with col_h1:
+        hora_inicio = st.time_input("Inicio del día", value=datetime.time(9, 0))
+    with col_h2:
+        hora_fin = st.time_input("Fin del día", value=datetime.time(20, 0))
+
+    bloqueos = st.text_area(
+        "Horarios ocupados o compromisos",
+        placeholder="Ej: El lunes de 2 PM a 5 PM tengo una comida familiar."
+    )
     
     btn_generar = st.button("🚀 Generar Itinerario", type="primary")
 
 # 2. Generación al presionar el botón
 if btn_generar:
-    estilo_str = ", ".join(estilo)
-    with st.spinner("🤖 Consultando lugares en Supabase y optimizando rutas con IA..."):
-        generar_plan(dias=dias, perfil_grupo=perfil, estilo_viaje=estilo_str)
-        st.session_state["itinerario_listo"] = True
+    if isinstance(fechas, tuple) and len(fechas) == 2:
+        fecha_inicio, fecha_fin = fechas
+        estilo_str = ", ".join(estilo)
+        
+        with st.spinner("🤖 Consultando lugares en Supabase y optimizando tiempos e itinerario..."):
+            generar_plan(
+                fecha_inicio=fecha_inicio,
+                fecha_fin=fecha_fin,
+                perfil_grupo=perfil,
+                estilo_viaje=estilo_str,
+                hora_inicio=hora_inicio.strftime("%I:%M %p"),
+                hora_fin=hora_fin.strftime("%I:%M %p"),
+                bloqueos_horario=bloqueos
+            )
+            st.session_state["itinerario_listo"] = True
+    else:
+        st.error("Por favor selecciona un rango válido de fechas (entrada y salida).")
 
-# 3. Mostrar el itinerario si existe el archivo (independiente de las recargas)
+# 3. Mostrar el itinerario si existe el archivo
 archivo_itinerario = "itinerario_generado.json"
 
 if os.path.exists(archivo_itinerario):
@@ -56,11 +90,12 @@ if os.path.exists(archivo_itinerario):
         res_lugares = supabase.table("lugares_cdmx").select("*").execute()
         dict_lugares = {l['nombre']: l for l in res_lugares.data}
         
-        dias_tabs = st.tabs([f"Día {d['dia_numero']}" for d in plan['itinerario_diario']])
+        titulos_tabs = [f"Día {d['dia_numero']} ({d.get('fecha', '')})" for d in plan['itinerario_diario']]
+        dias_tabs = st.tabs(titulos_tabs)
         
         for i, dia in enumerate(plan['itinerario_diario']):
             with dias_tabs[i]:
-                st.markdown(f"### {dia['titulo_dia']}")
+                st.markdown(f"### {dia['titulo_dia']} — *{dia.get('dia_semana', '')}*")
                 st.caption(f"📍 Zona principal: {dia['zona_principal']}")
                 
                 col_actividades, col_mapa = st.columns([1, 1])
@@ -94,11 +129,10 @@ if os.path.exists(archivo_itinerario):
         st.divider()
         st.markdown("### 📥 Descargar tu Itinerario")
         
-        # Estructurar los datos para el exportador
         datos_exportar = {
             "dias": [
                 {
-                    "dia": d["dia_numero"],
+                    "dia": f"{d['dia_numero']} ({d.get('dia_semana', '')} {d.get('fecha', '')})",
                     "actividades": [
                         {
                             "hora": act["hora_sugerida"],
