@@ -25,9 +25,9 @@ ai_client = genai.Client(api_key=gemini_key)
 # 2. Esquema de Salida del Itinerario
 class Actividad(BaseModel):
     hora_sugerida: str = Field(description="Ejemplo: '09:00 AM', '02:30 PM'")
-    lugar_nombre: str = Field(description="Nombre del lugar seleccionado de la base de datos")
-    categoria: str = Field(description="Categoría del lugar")
-    razon_recomendacion: str = Field(description="Explicación corta de por qué se sugiere en este momento")
+    lugar_nombre: str = Field(description="Nombre del lugar seleccionado de la base de datos O el nombre de la actividad/compromiso personal especificado por el usuario")
+    categoria: str = Field(description="Categoría del lugar (ej. 'Compromiso personal', 'Trabajo', 'Restaurante', 'Museo', etc.)")
+    razon_recomendacion: str = Field(description="Explicación corta de por qué se sugiere en este momento o nota sobre el compromiso personal")
 
 class DiaItinerario(BaseModel):
     dia_numero: int
@@ -70,20 +70,20 @@ def generar_plan(
     Perfil del grupo: '{perfil_grupo}'
     Estilo de viaje: '{estilo_viaje}'
 
-    RESTRICCIONES DE TIEMPO DEL USUARIO:
+    RESTRICCIONES DE TIEMPO Y COMPROMISOS DEL USUARIO:
     - Rango operativo diario predeterminado: De {hora_inicio} a {hora_fin}.
-    - Compromisos o momentos ocupados indicados expresamente por el usuario:
+    - COMPROMISOS O MOMENTOS OCUPADOS INDICADOS POR EL USUARIO:
       {bloqueos_horario if bloqueos_horario else 'Ninguno'}.
 
     Lista de lugares disponibles en la base de datos:
     {json.dumps(lugares_disponibles, ensure_ascii=False)}
 
     REGLAS ESTRICTAS DE PLANIFICACIÓN:
-    1. Utiliza ÚNICAMENTE los lugares proporcionados en la lista anterior.
-    2. REGLA DEL DÍA DE LA SEMANA Y HORARIOS: Evalúa qué día de la semana cae cada fecha. Si una fecha es LUNES, NO programes museos públicos (casi todos cierran). Utiliza parques, mercados, barrios históricos o restaurantes.
-    3. Respeta rigurosamente los momentos ocupados indicados por el usuario dejando esa franja libre o ajustando la hora de inicio/fin del día específico según lo solicitado.
+    1. ORIGEN DE LAS ACTIVIDADES: Utiliza los lugares de la base de datos para los itinerarios turísticos. SIN EMBARGO, si el usuario explícitamente indica un compromiso personal, reunión o evento privado (ej. "comida familiar", "juntas de trabajo"), DEBES INCLUIRLO EXPRESAMENTE como una actividad más dentro del itinerario en su horario correspondiente.
+    2. INICIO TARDÍO O TIEMPOS LIBRES: Si el usuario menciona que un día específico desea empezar más tarde (ej. "el sábado empezar a la 1pm"), simplemente programa la primera actividad turística de ese día a esa hora especificada. No agregues bloques artificiales como 'descanso' o 'mañana libre'.
+    3. REGLA DEL DÍA DE LA SEMANA Y HORARIOS: Evalúa qué día de la semana cae cada fecha. Si una fecha es LUNES, NO programes museos públicos (casi todos cierran). Utiliza parques, mercados, barrios históricos o restaurantes.
     4. Agrupa las actividades de un mismo día en la MISMA ZONA o zonas contiguas para evitar tráfico.
-    5. Cada día debe tener entre 3 y 4 actividades organizadas cronológicamente respetando los límites de horario.
+    5. Cada día debe tener entre 3 y 4 actividades organizadas cronológicamente respetando las ventanas de tiempo.
     """
 
     config = types.GenerateContentConfig(
