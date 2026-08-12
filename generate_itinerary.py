@@ -107,7 +107,7 @@ def generar_plan(
     
     try:
         res = ai_client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-flash-lite-latest",
             contents=prompt,
             config=config,
         )
