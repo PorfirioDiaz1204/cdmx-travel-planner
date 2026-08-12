@@ -8,18 +8,42 @@ from generate_itinerary import generar_plan, supabase
 from exporter import generar_pdf, generar_txt
 
 st.set_page_config(
-    page_title="CDMX Travel Planner",
+    page_title="Multi-City Travel Planner",
     page_icon="🗺️",
     layout="wide"
 )
 
-st.title("🗺️ CDMX Travel Assistant")
-st.subheader("Tu itinerario inteligente y personalizado por la Ciudad de México")
+st.title("🗺️ Smart Travel Assistant")
+st.subheader("Itinerarios inteligentes personalizados con optimización geográfica")
+
+# Configuración de ciudades piloto
+CIUDADES_PILOTO = {
+    "Ciudad de México": {"lat": 19.4326, "lon": -99.1332, "es_hub": False},
+    "Mérida": {"lat": 20.9676, "lon": -89.6237, "es_hub": True},
+    "Barcelona": {"lat": 41.3851, "lon": 2.1734, "es_hub": True},
+    "Cusco": {"lat": -13.5319, "lon": -71.9675, "es_hub": True}
+}
 
 # 1. Barra lateral
 with st.sidebar:
     st.header("⚙️ Configura tu Viaje")
     
+    destino_seleccionado = st.selectbox(
+        "📍 Selecciona tu Destino",
+        options=list(CIUDADES_PILOTO.keys())
+    )
+    
+    # Mostrar opción de escapadas si el destino es una ciudad Hub
+    es_hub = CIUDADES_PILOTO[destino_seleccionado]["es_hub"]
+    incluir_escapadas = False
+    
+    if es_hub:
+        st.info(f"💡 {destino_seleccionado} funciona como base para explorar zonas cercanas.")
+        incluir_escapadas = st.checkbox(
+            "¿Incluir escapadas / day-trips fuera de la ciudad?",
+            value=True
+        )
+
     hoy = datetime.date.today()
     fechas = st.date_input(
         "¿Cuáles son las fechas de tu viaje?",
@@ -35,8 +59,17 @@ with st.sidebar:
     
     estilo = st.multiselect(
         "¿Qué tipo de actividades buscas?",
-        ["Café de especialidad", "Museos y Arte", "Hiking y Naturaleza", "Gastronomía Tradicional", "Lujo y Gourmet"],
-        default=["Café de especialidad", "Museos y Arte", "Hiking y Naturaleza"]
+        [
+            "Café de especialidad", 
+            "Museos y Arte", 
+            "Hiking y Naturaleza", 
+            "Gastronomía Tradicional", 
+            "Lujo y Gourmet",
+            "Vida Nocturna y Bares",
+            "Mercados Locales",
+            "Excursión / Day-Trip"
+        ],
+        default=["Café de especialidad", "Museos y Arte", "Gastronomía Tradicional"]
     )
 
     st.markdown("---")
@@ -61,15 +94,17 @@ if btn_generar:
         fecha_inicio, fecha_fin = fechas
         estilo_str = ", ".join(estilo)
         
-        with st.spinner("🤖 Consultando lugares en Supabase y optimizando tiempos e itinerario..."):
+        with st.spinner(f"🤖 Optimizando ruta para {destino_seleccionado}..."):
             exito = generar_plan(
+                destino=destino_seleccionado,
                 fecha_inicio=fecha_inicio,
                 fecha_fin=fecha_fin,
                 perfil_grupo=perfil,
                 estilo_viaje=estilo_str,
                 hora_inicio=hora_inicio.strftime("%I:%M %p"),
                 hora_fin=hora_fin.strftime("%I:%M %p"),
-                bloqueos_horario=bloqueos
+                bloqueos_horario=bloqueos,
+                incluir_escapadas=incluir_escapadas
             )
             if exito:
                 st.session_state["itinerario_listo"] = True
@@ -79,7 +114,7 @@ if btn_generar:
     else:
         st.error("Por favor selecciona un rango válido de fechas (entrada y salida).")
 
-# 3. Mostrar el itinerario si existe el archivo
+# 3. Mostrar el itinerario
 archivo_itinerario = "itinerario_generado.json"
 
 if os.path.exists(archivo_itinerario):
@@ -87,15 +122,18 @@ if os.path.exists(archivo_itinerario):
         with open(archivo_itinerario, "r", encoding="utf-8") as f:
             plan = json.load(f)
             
-        st.success("¡Itinerario cargado!")
+        destino_plan = plan.get('destino', destino_seleccionado)
+        st.success(f"¡Itinerario cargado para {destino_plan}!")
         st.write(f"**Resumen:** {plan.get('resumen_viaje')}")
         
-        # Consultar coordenadas
-        res_lugares = supabase.table("lugares_cdmx").select("*").execute()
+        # Consultar lugares de la ciudad correspondiente
+        res_lugares = supabase.table("lugares_multidestino").select("*").eq("ciudad", destino_plan).execute()
         dict_lugares = {l['nombre']: l for l in res_lugares.data}
         
         titulos_tabs = [f"Día {d['dia_numero']} ({d.get('fecha', '')})" for d in plan['itinerario_diario']]
         dias_tabs = st.tabs(titulos_tabs)
+        
+        coords_default = CIUDADES_PILOTO.get(destino_plan, {"lat": 19.4326, "lon": -99.1332})
         
         for i, dia in enumerate(plan['itinerario_diario']):
             with dias_tabs[i]:
@@ -111,7 +149,7 @@ if os.path.exists(archivo_itinerario):
                             st.write(f"**Por qué ir:** {act['razon_recomendacion']}")
                             
                 with col_mapa:
-                    m = folium.Map(location=[19.4326, -99.1332], zoom_start=12)
+                    m = folium.Map(location=[coords_default["lat"], coords_default["lon"]], zoom_start=11)
                     
                     for act in dia['actividades']:
                         nombre = act['lugar_nombre']
@@ -150,12 +188,14 @@ if os.path.exists(archivo_itinerario):
 
         col_pdf, col_txt = st.columns(2)
 
+        nombre_archivo_limpio = destino_plan.lower().replace(' ', '_')
+
         with col_pdf:
-            pdf_bytes = generar_pdf(datos_exportar)
+            pdf_bytes = generar_pdf(datos_exportar, titulo=f"Itinerario - {destino_plan}")
             st.download_button(
                 label="📄 Descargar como PDF",
                 data=pdf_bytes,
-                file_name="itinerario_cdmx.pdf",
+                file_name=f"itinerario_{nombre_archivo_limpio}.pdf",
                 mime="application/pdf",
                 use_container_width=True
             )
@@ -165,7 +205,7 @@ if os.path.exists(archivo_itinerario):
             st.download_button(
                 label="📝 Descargar como Texto (.txt)",
                 data=txt_bytes,
-                file_name="itinerario_cdmx.txt",
+                file_name=f"itinerario_{nombre_archivo_limpio}.txt",
                 mime="text/plain",
                 use_container_width=True
             )
