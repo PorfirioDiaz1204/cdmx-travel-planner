@@ -52,7 +52,7 @@ def generar_plan(
     hora_inicio: str,
     hora_fin: str,
     bloqueos_horario: str = ""
-):
+) -> bool:
     num_dias = (fecha_fin - fecha_inicio).days + 1
     print(f"🔍 Consultando base de datos en Supabase para un viaje del {fecha_inicio} al {fecha_fin} ({num_dias} días)...")
     
@@ -62,7 +62,7 @@ def generar_plan(
 
     if not lugares_disponibles:
         print("❌ No se encontraron lugares en la base de datos.")
-        return
+        return False
 
     prompt = f"""
     Eres un experto guía de viajes en la Ciudad de México.
@@ -71,8 +71,9 @@ def generar_plan(
     Estilo de viaje: '{estilo_viaje}'
 
     RESTRICCIONES DE TIEMPO DEL USUARIO:
-    - Rango operativo diario: De {hora_inicio} a {hora_fin}.
-    - Compromisos o momentos ocupados marcados por el usuario: {bloqueos_horario if bloqueos_horario else 'Ninguno'}.
+    - Rango operativo diario predeterminado: De {hora_inicio} a {hora_fin}.
+    - Compromisos o momentos ocupados indicados expresamente por el usuario:
+      {bloqueos_horario if bloqueos_horario else 'Ninguno'}.
 
     Lista de lugares disponibles en la base de datos:
     {json.dumps(lugares_disponibles, ensure_ascii=False)}
@@ -80,9 +81,9 @@ def generar_plan(
     REGLAS ESTRICTAS DE PLANIFICACIÓN:
     1. Utiliza ÚNICAMENTE los lugares proporcionados en la lista anterior.
     2. REGLA DEL DÍA DE LA SEMANA Y HORARIOS: Evalúa qué día de la semana cae cada fecha. Si una fecha es LUNES, NO programes museos públicos (casi todos cierran). Utiliza parques, mercados, barrios históricos o restaurantes.
-    3. Respeta los momentos ocupados indicados por el usuario dejando esa franja libre.
+    3. Respeta rigurosamente los momentos ocupados indicados por el usuario dejando esa franja libre o ajustando la hora de inicio/fin del día específico según lo solicitado.
     4. Agrupa las actividades de un mismo día en la MISMA ZONA o zonas contiguas para evitar tráfico.
-    5. Cada día debe tener entre 3 y 4 actividades organizadas cronológicamente respetando la ventana de {hora_inicio} a {hora_fin}.
+    5. Cada día debe tener entre 3 y 4 actividades organizadas cronológicamente respetando los límites de horario.
     """
 
     config = types.GenerateContentConfig(
@@ -107,6 +108,8 @@ def generar_plan(
             json.dump(plan_json, f, ensure_ascii=False, indent=4)
             
         print(f"✅ ¡Itinerario generado con éxito y guardado en '{archivo_salida}'!")
+        return True
         
     except Exception as e:
         print(f"❌ Error al generar el itinerario: {e}")
+        return False
