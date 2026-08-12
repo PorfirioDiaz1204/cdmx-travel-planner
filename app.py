@@ -62,7 +62,7 @@ if btn_generar:
         estilo_str = ", ".join(estilo)
         
         with st.spinner("🤖 Consultando lugares en Supabase y optimizando tiempos e itinerario..."):
-            generar_plan(
+            exito = generar_plan(
                 fecha_inicio=fecha_inicio,
                 fecha_fin=fecha_fin,
                 perfil_grupo=perfil,
@@ -71,7 +71,11 @@ if btn_generar:
                 hora_fin=hora_fin.strftime("%I:%M %p"),
                 bloqueos_horario=bloqueos
             )
-            st.session_state["itinerario_listo"] = True
+            if exito:
+                st.session_state["itinerario_listo"] = True
+                st.rerun()
+            else:
+                st.error("Ocurrió un error al generar el itinerario. Revisa la consola.")
     else:
         st.error("Por favor selecciona un rango válido de fechas (entrada y salida).")
 
