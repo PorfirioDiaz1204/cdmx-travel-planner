@@ -99,8 +99,7 @@ def generar_plan(
     config = types.GenerateContentConfig(
         response_mime_type="application/json",
         response_schema=PlanDeViaje,
-        temperature=0.3,
-        tools=[{"google_search": {}}]
+        temperature=0.3
     )
 
     print(f"🤖 Generando itinerario inteligente para {destino} con Gemini + Grounding...")
