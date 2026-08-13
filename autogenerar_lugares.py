@@ -56,7 +56,7 @@ def autogenerar_y_poblar(ciudad: str, cantidad: int = 5):
     )
 
     respuesta = ai_client.models.generate_content(
-        model="gemini-2.5-flash",
+        model="gemini-flash-lite-latest",
         contents=prompt,
         config=config
     )
