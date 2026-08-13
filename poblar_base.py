@@ -9,7 +9,9 @@ key: str = os.getenv("SUPABASE_KEY")
 supabase: Client = create_client(url, key)
 
 nuevos_lugares = [
+    # ==========================================
     # --- CIUDAD DE MÉXICO ---
+    # ==========================================
     {
         "nombre": "Palacio de Bellas Artes",
         "ciudad": "Ciudad de México",
@@ -59,7 +61,9 @@ nuevos_lugares = [
         "perfil_recomendado": "Familia, Amigos, Solo"
     },
 
-    # --- MÉRIDA (Ciudad Hub) ---
+    # ==========================================
+    # --- MÉRIDA ---
+    # ==========================================
     {
         "nombre": "Paseo de Montejo",
         "ciudad": "Mérida",
@@ -108,8 +112,82 @@ nuevos_lugares = [
         "costo_estimado": "Alto",
         "perfil_recomendado": "Familia, Pareja, Solo"
     },
+    {
+        "nombre": "Gran Museo del Mundo Maya",
+        "ciudad": "Mérida",
+        "categoria": "Museos y Arte",
+        "zona": "Norte / Cordemex",
+        "es_escapada_fuera": False,
+        "latitud": 21.0360,
+        "longitud": -89.6293,
+        "descripcion_corta": "Exposición moderna e interactiva sobre la historia y cultura maya.",
+        "costo_estimado": "Moderado",
+        "perfil_recomendado": "Familia, Solo, Amigos"
+    },
+    {
+        "nombre": "Parque Santa Lucía",
+        "ciudad": "Mérida",
+        "categoria": "Gastronomía Tradicional",
+        "zona": "Centro Histórico",
+        "es_escapada_fuera": False,
+        "latitud": 20.9706,
+        "longitud": -89.6226,
+        "descripcion_corta": "Plaza icónica con terrazas de restaurantes y serenatas yucatecas los jueves.",
+        "costo_estimado": "Moderado",
+        "perfil_recomendado": "Pareja, Familia, Amigos"
+    },
+    {
+        "nombre": "Manifesto Specialty Coffee",
+        "ciudad": "Mérida",
+        "categoria": "Café de especialidad",
+        "zona": "Centro Histórico",
+        "es_escapada_fuera": False,
+        "latitud": 20.9731,
+        "longitud": -89.6221,
+        "descripcion_corta": "Cafetería de especialidad con tostado artesanal en una casona colonial.",
+        "costo_estimado": "Económico",
+        "perfil_recomendado": "Solo, Pareja"
+    },
+    {
+        "nombre": "Reserva Ecológica Cuxtal",
+        "ciudad": "Mérida",
+        "categoria": "Hiking y Naturaleza",
+        "zona": "Sur / Periferia",
+        "es_escapada_fuera": False,
+        "latitud": 20.8521,
+        "longitud": -89.6105,
+        "descripcion_corta": "Área natural protegida ideal para observación de aves y caminatas tranquilas.",
+        "costo_estimado": "Gratis",
+        "perfil_recomendado": "Familia, Solo"
+    },
+    {
+        "nombre": "Zona Arqueológica Uxmal",
+        "ciudad": "Mérida",
+        "categoria": "Excursión / Day-Trip",
+        "zona": "Ruta Puuc",
+        "es_escapada_fuera": True,
+        "latitud": 20.3607,
+        "longitud": -89.7713,
+        "descripcion_corta": "Majestuosa ciudad maya famosa por la Pirámide del Adivino a 1h 15m de Mérida.",
+        "costo_estimado": "Alto",
+        "perfil_recomendado": "Familia, Pareja, Solo"
+    },
+    {
+        "nombre": "Pueblo Mágico de Izamal",
+        "ciudad": "Mérida",
+        "categoria": "Excursión / Day-Trip",
+        "zona": "Izamal",
+        "es_escapada_fuera": True,
+        "latitud": 20.9351,
+        "longitud": -89.0182,
+        "descripcion_corta": "La ciudad amarilla, conocida por su convento colonial e impresionantes pirámides.",
+        "costo_estimado": "Económico",
+        "perfil_recomendado": "Familia, Pareja, Solo"
+    },
 
+    # ==========================================
     # --- BARCELONA ---
+    # ==========================================
     {
         "nombre": "Basílica de la Sagrada Família",
         "ciudad": "Barcelona",
@@ -146,8 +224,82 @@ nuevos_lugares = [
         "costo_estimado": "Moderado",
         "perfil_recomendado": "Familia, Pareja, Solo"
     },
+    {
+        "nombre": "Park Güell",
+        "ciudad": "Barcelona",
+        "categoria": "Hiking y Naturaleza",
+        "zona": "Gràcia / Carmel",
+        "es_escapada_fuera": False,
+        "latitud": 41.4145,
+        "longitud": 2.1527,
+        "descripcion_corta": "Parque público con icónicos mosaicos y vistas panorámicas de Barcelona.",
+        "costo_estimado": "Moderado",
+        "perfil_recomendado": "Familia, Pareja, Solo"
+    },
+    {
+        "nombre": "Barri Gòtic",
+        "ciudad": "Barcelona",
+        "categoria": "Museos y Arte",
+        "zona": "Ciutat Vella",
+        "es_escapada_fuera": False,
+        "latitud": 41.3825,
+        "longitud": 2.1769,
+        "descripcion_corta": "Calles medievales estrechas, la Catedral de Barcelona y plazas históricas.",
+        "costo_estimado": "Gratis",
+        "perfil_recomendado": "Familia, Pareja, Solo, Amigos"
+    },
+    {
+        "nombre": "Satan's Coffee Corner",
+        "ciudad": "Barcelona",
+        "categoria": "Café de especialidad",
+        "zona": "Gótico",
+        "es_escapada_fuera": False,
+        "latitud": 41.3831,
+        "longitud": 2.1772,
+        "descripcion_corta": "Pioneros del café de especialidad con un ambiente urbano y vanguardista.",
+        "costo_estimado": "Económico",
+        "perfil_recomendado": "Solo, Amigos"
+    },
+    {
+        "nombre": "El Xampanyet",
+        "ciudad": "Barcelona",
+        "categoria": "Gastronomía Tradicional",
+        "zona": "El Born",
+        "es_escapada_fuera": False,
+        "latitud": 41.3848,
+        "longitud": 2.1812,
+        "descripcion_corta": "Taverna tradicional famosa por su cava de la casa, anchoas y tapas auténticas.",
+        "costo_estimado": "Moderado",
+        "perfil_recomendado": "Amigos, Pareja"
+    },
+    {
+        "nombre": "Pueblo Costero de Sitges",
+        "ciudad": "Barcelona",
+        "categoria": "Excursión / Day-Trip",
+        "zona": "Costa del Garraf",
+        "es_escapada_fuera": True,
+        "latitud": 41.2372,
+        "longitud": 1.8059,
+        "descripcion_corta": "Hermosa villa marinera con playas, paseo marítimo y arte a 40 min en tren.",
+        "costo_estimado": "Moderado",
+        "perfil_recomendado": "Familia, Pareja, Amigos"
+    },
+    {
+        "nombre": "Girona Histórica",
+        "ciudad": "Barcelona",
+        "categoria": "Excursión / Day-Trip",
+        "zona": "Girona",
+        "es_escapada_fuera": True,
+        "latitud": 41.9831,
+        "longitud": 2.8249,
+        "descripcion_corta": "Ciudad medieval con un barrio judío conservado y murallas a 38 min en tren de alta velocidad.",
+        "costo_estimado": "Moderado",
+        "perfil_recomendado": "Familia, Pareja, Solo"
+    },
 
-    # --- CUSCO (Ciudad Hub) ---
+    # ==========================================
+    # --- CUSCO ---
+    # ==========================================
     {
         "nombre": "Plaza de Armas de Cusco",
         "ciudad": "Cusco",
@@ -183,6 +335,78 @@ nuevos_lugares = [
         "descripcion_corta": "Pueblo e imponente recinto arqueológico inca a 1.5h de Cusco.",
         "costo_estimado": "Moderado",
         "perfil_recomendado": "Familia, Pareja, Amigos"
+    },
+    {
+        "nombre": "Barrio de San Blas",
+        "ciudad": "Cusco",
+        "categoria": "Museos y Arte",
+        "zona": "San Blas",
+        "es_escapada_fuera": False,
+        "latitud": -13.5156,
+        "longitud": -71.9742,
+        "descripcion_corta": "Barrio bohemio con talleres de artesanos, galerías y miradores hacia la ciudad.",
+        "costo_estimado": "Gratis",
+        "perfil_recomendado": "Pareja, Solo, Amigos"
+    },
+    {
+        "nombre": "Mercado Central de San Pedro",
+        "ciudad": "Cusco",
+        "categoria": "Mercados Locales",
+        "zona": "Centro Histórico",
+        "es_escapada_fuera": False,
+        "latitud": -13.5207,
+        "longitud": -71.9822,
+        "descripcion_corta": "El mercado más vivo de Cusco para probar jugos frescos, sopas y comprar artesanías.",
+        "costo_estimado": "Económico",
+        "perfil_recomendado": "Familia, Amigos, Solo"
+    },
+    {
+        "nombre": "Three Monkeys Coffee Bar",
+        "ciudad": "Cusco",
+        "categoria": "Café de especialidad",
+        "zona": "Centro Histórico",
+        "es_escapada_fuera": False,
+        "latitud": -13.5178,
+        "longitud": -71.9765,
+        "descripcion_corta": "Café de especialidad con granos de origen peruano de la cuenca amazónica cusqueña.",
+        "costo_estimado": "Económico",
+        "perfil_recomendado": "Solo, Pareja"
+    },
+    {
+        "nombre": "Cicciolina",
+        "ciudad": "Cusco",
+        "categoria": "Lujo y Gourmet",
+        "zona": "Centro Histórico",
+        "es_escapada_fuera": False,
+        "latitud": -13.5161,
+        "longitud": -71.9754,
+        "descripcion_corta": "Restaurante y tapas bar en un segundo piso colonial con cocina mediterránea-andina.",
+        "costo_estimado": "Alto",
+        "perfil_recomendado": "Pareja, Amigos"
+    },
+    {
+        "nombre": "Salineras de Maras y Terrazas de Moray",
+        "ciudad": "Cusco",
+        "categoria": "Excursión / Day-Trip",
+        "zona": "Valle Sagrado",
+        "es_escapada_fuera": True,
+        "latitud": -13.3321,
+        "longitud": -72.1585,
+        "descripcion_corta": "Miles de pozos artesanales de sal y el laboratorio agrícola inca en Moray.",
+        "costo_estimado": "Moderado",
+        "perfil_recomendado": "Familia, Pareja, Amigos"
+    },
+    {
+        "nombre": "Montaña de Siete Colores (Vinicunca)",
+        "ciudad": "Cusco",
+        "categoria": "Excursión / Day-Trip",
+        "zona": "Canchis",
+        "es_escapada_fuera": True,
+        "latitud": -13.8694,
+        "longitud": -71.3030,
+        "descripcion_corta": "Impresionante paisaje natural a más de 5,000 msnm para caminata exigente.",
+        "costo_estimado": "Moderado",
+        "perfil_recomendado": "Amigos, Solo"
     }
 ]
 
