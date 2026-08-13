@@ -71,4 +71,4 @@ def autogenerar_y_poblar(ciudad: str, cantidad: int = 5):
 
 if __name__ == "__main__":
     # Ejemplo de uso: Generar 5 lugares nuevos para Mérida sin repetir los actuales
-    autogenerar_y_poblar(ciudad="Mérida", cantidad=5)
+    autogenerar_y_poblar(ciudad="CDMX", cantidad=15)
