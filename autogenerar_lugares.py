@@ -48,7 +48,7 @@ def autogenerar_y_poblar(ciudad: str, cantidad: int = 5):
     """
 
     # 3. Llamar a Gemini con respuesta JSON estructurada
-    print(f"🤖 Solicitando a Gemini {cantidad} lugares nuevos...")
+    print(f" Solicitando a Gemini {cantidad} lugares nuevos...")
     config = types.GenerateContentConfig(
         response_mime_type="application/json",
         response_schema=ListaLugares,
