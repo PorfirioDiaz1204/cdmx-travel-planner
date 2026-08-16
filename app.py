@@ -17,8 +17,21 @@ st.set_page_config(
 st.title("🗺️ Smart Travel Assistant")
 st.subheader("Itinerarios inteligentes personalizados con optimización geográfica")
 
-# Predefinidas sugeridas
-CIUDADES_SUGERIDAS = ["Ciudad de México", "Mérida", "Barcelona", "Cusco", "Otra ciudad..."]
+# --- OBTENER CIUDADES EXISTENTES DESDE SUPABASE ---
+@st.cache_data(ttl=60)
+def obtener_ciudades_bd():
+    try:
+        res = supabase.table("lugares_multidestino").select("ciudad").execute()
+        if res.data:
+            # Obtener ciudades únicas y ordenarlas
+            ciudades = sorted(list(set(l["ciudad"] for l in res.data if l.get("ciudad"))))
+            return ciudades
+    except Exception as e:
+        print(f"Error al obtener ciudades de Supabase: {e}")
+    return ["Ciudad de México", "Mérida", "Barcelona", "Cusco"]
+
+ciudades_bd = obtener_ciudades_bd()
+opciones_menu = ciudades_bd + ["Otra ciudad..."]
 
 # 1. Barra lateral
 with st.sidebar:
@@ -26,7 +39,7 @@ with st.sidebar:
     
     opcion_ciudad = st.selectbox(
         "📍 Selecciona tu Destino",
-        options=CIUDADES_SUGERIDAS
+        options=opciones_menu
     )
     
     if opcion_ciudad == "Otra ciudad...":
@@ -127,6 +140,8 @@ if btn_generar:
             )
             
             if exito:
+                # Limpiar la caché para actualizar la lista de ciudades disponibles
+                st.cache_data.clear()
                 status.update(label="¡Itinerario listo!", state="complete")
                 st.session_state["itinerario_listo"] = True
                 st.rerun()
