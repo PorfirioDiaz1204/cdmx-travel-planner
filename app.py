@@ -92,18 +92,22 @@ if btn_generar:
         estilo_str = ", ".join(estilo)
         num_dias = (fecha_fin - fecha_inicio).days + 1
         
-        # Mínimo de lugares deseables: 4 lugares por día + 4 de margen
-        lugares_necesarios = (num_dias * 4) + 4
+        # Meta deseada de lugares en la base de datos para garantizar variabilidad
+        CANTIDAD_A_GENERAR = 29
+        
+        # Conversión segura de horarios para evitar TypeError
+        h_inicio_str = hora_inicio.strftime("%I:%M %p") if isinstance(hora_inicio, datetime.time) else str(hora_inicio)
+        h_fin_str = hora_fin.strftime("%I:%M %p") if isinstance(hora_fin, datetime.time) else str(hora_fin)
         
         with st.status(f"🔎 Preparando datos para **{destino_seleccionado}**...", expanded=True) as status:
             # Check en Supabase
             res_lugares = supabase.table("lugares_multidestino").select("nombre").eq("ciudad", destino_seleccionado).execute()
-            cantidad_actual = len(res_lugares.data)
+            cantidad_actual = len(res_lugares.data) if res_lugares.data else 0
             
-            if cantidad_actual < lugares_necesarios:
-                faltantes = lugares_necesarios - cantidad_actual
+            if cantidad_actual < CANTIDAD_A_GENERAR:
+                faltantes = CANTIDAD_A_GENERAR - cantidad_actual
                 status.write(f"🌐 Encontrados {cantidad_actual} lugares. Generando {faltantes} nuevos lugares con IA...")
-                exito_poblar = autogenerar_y_poblar(ciudad=destino_seleccionado, cantidad=max(faltantes, 6))
+                exito_poblar = autogenerar_y_poblar(ciudad=destino_seleccionado, cantidad=faltantes)
                 if not exito_poblar:
                     st.warning("No se pudieron autogenerar lugares adicionales, se intentará usar los existentes.")
             else:
@@ -116,8 +120,8 @@ if btn_generar:
                 fecha_fin=fecha_fin,
                 perfil_grupo=perfil,
                 estilo_viaje=estilo_str,
-                hora_inicio=hora_inicio.strftime("%I:%M %p"),
-                hora_fin=hora_fin.strftime("%I:%M %p"),
+                hora_inicio=h_inicio_str,
+                hora_fin=h_fin_str,
                 bloqueos_horario=bloqueos,
                 incluir_escapadas=incluir_escapadas
             )
@@ -147,11 +151,11 @@ if os.path.exists(archivo_itinerario):
         
         # Consultar lugares de la ciudad correspondiente
         res_lugares = supabase.table("lugares_multidestino").select("*").eq("ciudad", destino_plan).execute()
-        dict_lugares = {l['nombre']: l for l in res_lugares.data}
+        dict_lugares = {l['nombre']: l for l in res_lugares.data} if res_lugares.data else {}
         
         # Calcular centro dinámico del mapa (promedio de coords)
-        lats = [l['latitud'] for l in res_lugares.data if 'latitud' in l and l['latitud']]
-        lons = [l['longitud'] for l in res_lugares.data if 'longitud' in l and l['longitud']]
+        lats = [l['latitud'] for l in res_lugares.data if 'latitud' in l and l['latitud']] if res_lugares.data else []
+        lons = [l['longitud'] for l in res_lugares.data if 'longitud' in l and l['longitud']] if res_lugares.data else []
         
         lat_centro = sum(lats) / len(lats) if lats else 19.4326
         lon_centro = sum(lons) / len(lons) if lons else -99.1332
