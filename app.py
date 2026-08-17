@@ -4,7 +4,7 @@ import os
 import datetime
 import folium
 from streamlit_folium import st_folium
-from generate_itinerary import generar_plan, supabase
+from generate_itinerary import generar_plan, reemplazar_actividad, supabase
 from autogenerar_lugares import autogenerar_y_poblar
 from exporter import generar_pdf, generar_txt
 
@@ -186,11 +186,26 @@ if os.path.exists(archivo_itinerario):
                 col_actividades, col_mapa = st.columns([1, 1])
                 
                 with col_actividades:
-                    for act in dia['actividades']:
+                    for act_idx, act in enumerate(dia['actividades']):
                         with st.expander(f"⏰ {act['hora_sugerida']} - {act['lugar_nombre']}", expanded=True):
                             st.write(f"**Categoría:** {act['categoria'].capitalize()}")
                             st.write(f"**Por qué ir:** {act['razon_recomendacion']}")
                             
+                            # Botón para solicitar reemplazo de esta actividad
+                            key_btn = f"swap_{dia['dia_numero']}_{act_idx}_{act['lugar_nombre']}"
+                            if st.button("🔄 Cambiar esta actividad", key=key_btn):
+                                with st.spinner("Buscando un reemplazo adecuado..."):
+                                    ok = reemplazar_actividad(
+                                        dia_numero=dia['dia_numero'],
+                                        hora_sugerida=act['hora_sugerida'],
+                                        nombre_lugar_actual=act['lugar_nombre']
+                                    )
+                                    if ok:
+                                        st.success("¡Actividad actualizada!")
+                                        st.rerun()
+                                    else:
+                                        st.warning("No hay más lugares disponibles en la base de datos para reemplazar esta actividad.")
+
                 with col_mapa:
                     m = folium.Map(location=[lat_centro, lon_centro], zoom_start=12)
                     
