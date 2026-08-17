@@ -43,7 +43,7 @@ with st.sidebar:
     )
     
     if opcion_ciudad == "Otra ciudad...":
-        destino_seleccionado = st.text_input("Escribe el nombre de la ciudad:", value="Oaxaca").strip()
+        destino_seleccionado = st.text_input("Escribe el nombre de la ciudad:", value="Roma").strip()
     else:
         destino_seleccionado = opcion_ciudad
 
@@ -106,7 +106,7 @@ if btn_generar:
         num_dias = (fecha_fin - fecha_inicio).days + 1
         
         # Meta deseada de lugares en la base de datos para garantizar variabilidad
-        CANTIDAD_A_GENERAR = 29
+        CANTIDAD_A_GENERAR = 30
         
         # Conversión segura de horarios para evitar TypeError
         h_inicio_str = hora_inicio.strftime("%I:%M %p") if isinstance(hora_inicio, datetime.time) else str(hora_inicio)
@@ -119,7 +119,7 @@ if btn_generar:
             
             if cantidad_actual < CANTIDAD_A_GENERAR:
                 faltantes = CANTIDAD_A_GENERAR - cantidad_actual
-                status.write(f"🌐 Encontrados {cantidad_actual} lugares. Generando {faltantes} nuevos lugares con IA...")
+                status.write(f"🌐 Encontrados {cantidad_actual} lugares. Explorando {faltantes} nuevos lugares...")
                 exito_poblar = autogenerar_y_poblar(ciudad=destino_seleccionado, cantidad=faltantes)
                 if not exito_poblar:
                     st.warning("No se pudieron autogenerar lugares adicionales, se intentará usar los existentes.")
