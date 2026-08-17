@@ -43,6 +43,11 @@ class PlanDeViaje(BaseModel):
     resumen_viaje: str = Field(description="Breve introducción del plan personalizado")
     itinerario_diario: List[DiaItinerario]
 
+class ReemplazoRespuesta(BaseModel):
+    lugar_nombre: str = Field(description="Nombre exacto del lugar alternativo elegido")
+    categoria: str = Field(description="Categoría del lugar seleccionado")
+    razon_recomendacion: str = Field(description="Explicación concisa de por qué este nuevo lugar encaja bien en la hora y contexto indicado")
+
 # 3. Función Principal del Generador
 def generar_plan(
     destino: str,
@@ -89,20 +94,19 @@ def generar_plan(
     REGLAS ESTRICTAS DE PLANIFICACIÓN:
     1. ORIGEN DE LAS ACTIVIDADES: Utiliza los lugares de la base de datos para los itinerarios turísticos. SIN EMBARGO, si el usuario explícitamente indica un compromiso personal, reunión o evento privado (ej. "comida familiar", "juntas de trabajo"), DEBES INCLUIRLO EXPRESAMENTE como una actividad más dentro del itinerario en su horario correspondiente.
     2. INICIO TARDÍO O TIEMPOS LIBRES: Si el usuario menciona que un día específico desea empezar más tarde (ej. "el sábado empezar a la 1pm"), simplemente programa la primera actividad turística de ese día a esa hora especificada. No agregues bloques artificiales como 'descanso' o 'mañana libre'.
-    3. MANEJO DE ESCAPADAS / DAY TRIPS: {'Incluye excursiones o escapadas fuera de la mancha urbana si enriquecen la ruta.' if incluir_escapadas else 'Limítate estrictamente al área urbana principal.'}
+    3. MANEJO DE ESCAPADAS / DAY TRIPS: {'Incluye excursiones o escapadas fuera de la mancha urbana si enriquecen la ruta.' if incluir_escapadas else 'Limítate strictly al área urbana principal.'}
     4. REGLA DEL DÍA DE LA SEMANA Y HORARIOS: Evalúa qué día de la semana cae cada fecha. Si una fecha es LUNES, NO programes museos públicos que cierran. Utiliza parques, mercados, barrios históricos o restaurantes.
     5. Agrupa las actividades de un mismo día en la MISMA ZONA o zonas contiguas para evitar tráfico.
     6. Cada día debe tener entre 3 y 4 actividades organizadas cronológicamente respetando las ventanas de tiempo.
     """
 
-    # Configuración con Google Search Grounding habilitado
     config = types.GenerateContentConfig(
         response_mime_type="application/json",
         response_schema=PlanDeViaje,
         temperature=0.3
     )
 
-    print(f"🤖 Generando itinerario inteligente para {destino} con Gemini + Grounding...")
+    print(f"🤖 Generando itinerario inteligente para {destino} con Gemini...")
     
     try:
         res = ai_client.models.generate_content(
@@ -122,4 +126,103 @@ def generar_plan(
         
     except Exception as e:
         print(f"❌ Error al generar el itinerario: {e}")
+        return False
+
+# 4. Función para reemplazar una actividad específica
+def reemplazar_actividad(dia_numero: int, hora_sugerida: str, nombre_lugar_actual: str) -> bool:
+    """
+    Reemplaza una actividad específica en itinerario_generado.json seleccionando un
+    nuevo lugar de la base de datos de Supabase que aún no esté agendado.
+    """
+    archivo_json = "itinerario_generado.json"
+    if not os.path.exists(archivo_json):
+        print("❌ No existe el archivo de itinerario generado.")
+        return False
+
+    try:
+        with open(archivo_json, "r", encoding="utf-8") as f:
+            plan = json.load(f)
+
+        destino = plan.get("destino")
+        if not destino:
+            return False
+
+        # Extraer todos los lugares actualmente usados
+        lugares_usados = set()
+        for dia in plan.get("itinerario_diario", []):
+            for act in dia.get("actividades", []):
+                lugares_usados.add(act["lugar_nombre"])
+
+        # Consultar catálogo completo para este destino
+        res_db = supabase.table("lugares_multidestino").select("*").eq("ciudad", destino).execute()
+        if not res_db.data:
+            print(f"❌ No se encontraron lugares en la BD para {destino}.")
+            return False
+
+        # Filtrar lugares disponibles excluyendo los que ya están en el plan
+        candidatos = [l for l in res_db.data if l["nombre"] not in lugares_usados]
+
+        if not candidatos:
+            print("⚠️ No hay lugares disponibles sin usar para reemplazar.")
+            return False
+
+        candidatos_resumen = [
+            {
+                "nombre": c["nombre"],
+                "categoria": c.get("categoria"),
+                "zona": c.get("zona"),
+                "descripcion": c.get("descripcion_corta")
+            }
+            for c in candidatos
+        ]
+
+        prompt_reemplazo = f"""
+        Actúa como un guía de viajes experto. Necesitamos reemplazar una actividad del itinerario para {destino}.
+        
+        Actividad a sustituir:
+        - Lugar actual: "{nombre_lugar_actual}"
+        - Horario: {hora_sugerida}
+
+        Selecciona la MEJOR opción de la siguiente lista de alternativas disponibles que NO se han usado:
+        {json.dumps(candidatos_resumen, ensure_ascii=False)}
+
+        Asegúrate de que la nueva propuesta encaje de manera lógica en ese horario del día.
+        """
+
+        config = types.GenerateContentConfig(
+            response_mime_type="application/json",
+            response_schema=ReemplazoRespuesta,
+            temperature=0.3
+        )
+
+        res = ai_client.models.generate_content(
+            model="gemini-flash-lite-latest",
+            contents=prompt_reemplazo,
+            config=config
+        )
+
+        nuevo_lugar_data = json.loads(res.text)
+
+        # Aplicar el cambio en el JSON
+        modificado = False
+        for dia in plan.get("itinerario_diario", []):
+            if dia.get("dia_numero") == dia_numero:
+                for act in dia.get("actividades", []):
+                    if act.get("hora_sugerida") == hora_sugerida and act.get("lugar_nombre") == nombre_lugar_actual:
+                        act["lugar_nombre"] = nuevo_lugar_data["lugar_nombre"]
+                        act["categoria"] = nuevo_lugar_data.get("categoria", act["categoria"])
+                        act["razon_recomendacion"] = nuevo_lugar_data.get("razon_recomendacion", "Reemplazo personalizado generado por IA.")
+                        modificado = True
+                        break
+
+        if modificado:
+            with open(archivo_json, "w", encoding="utf-8") as f:
+                json.dump(plan, f, ensure_ascii=False, indent=4)
+            print(f"✅ Actividad '{nombre_lugar_actual}' reemplazada con éxito por '{nuevo_lugar_data['lugar_nombre']}'")
+            return True
+
+        return False
+
+    except Exception as e:
+        print(f"❌ Error al reemplazar la actividad: {e}")
         return False
