@@ -15,7 +15,7 @@ st.set_page_config(
 )
 
 st.title("🗺️ Smart Travel Assistant")
-st.subheader("Itinerarios inteligentes personalizados con optimización geográfica")
+st.subheader("Itinerarios inteligentes personalizados")
 
 # --- OBTENER CIUDADES EXISTENTES DESDE SUPABASE ---
 @st.cache_data(ttl=60)
